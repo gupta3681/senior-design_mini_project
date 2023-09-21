@@ -8,6 +8,7 @@ import "firebase/compat/analytics";
 
 import { useAuthState } from "react-firebase-hooks/auth";
 import { useCollectionData } from "react-firebase-hooks/firestore";
+import { useDocumentData } from "react-firebase-hooks/firestore";
 
 firebase.initializeApp({
   apiKey: "AIzaSyDuDwaCWKBOrw0HA6jwOnhLxgIx2wbsZfc",
@@ -117,39 +118,41 @@ function SignOut() {
 
 function ChatRoom({ selectedUser }) {
   const dummy = useRef();
+  const { uid } = auth.currentUser;
+
+  // Create a unique conversation ID based on user IDs
+  const conversationId =
+    uid < selectedUser.uid
+      ? `${uid}-${selectedUser.uid}`
+      : `${selectedUser.uid}-${uid}`;
+
+  const conversationRef = firestore
+    .collection("conversations")
+    .doc(conversationId);
+  const [conversation] = useDocumentData(conversationRef);
+
+  const messages = conversation?.messages || [];
   const messagesRef = firestore.collection("messages");
   const query = messagesRef.orderBy("createdAt").limit(25);
 
-  const [messages] = useCollectionData(query, { idField: "id" });
-
   const [formValue, setFormValue] = useState("");
+  const [formValue1, setFormValue1] = useState("");
+
+  const messagesArray = Array.isArray(messages) ? messages : [];
 
   const sendMessage = async (e) => {
     e.preventDefault();
 
     const { uid, photoURL } = auth.currentUser;
 
-    // Create a unique conversation ID based on user IDs
-    const conversationId =
-      uid < selectedUser.uid
-        ? `${uid}-${selectedUser.uid}`
-        : `${selectedUser.uid}-${uid}`;
-
-    const conversationRef = firestore
-      .collection("conversations")
-      .doc(conversationId);
-
-    // Fetch the existing conversation
-    const conversationSnapshot = await conversationRef.get();
-
     const newMessage = {
-      text: formValue,
+      text: formValue1,
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       sender: uid,
       photoURL,
     };
 
-    if (!conversationSnapshot.exists) {
+    if (!conversation) {
       // If the conversation doesn't exist, create a new one
       await conversationRef.set({
         participants: [uid, selectedUser.uid],
@@ -157,33 +160,34 @@ function ChatRoom({ selectedUser }) {
       });
     } else {
       // If the conversation exists, append the new message
-      const currentMessages = conversationSnapshot.data().messages || [];
       await conversationRef.update({
-        messages: [...currentMessages, newMessage],
+        messages: firebase.firestore.FieldValue.arrayUnion(newMessage),
       });
     }
 
-    setFormValue("");
+    setFormValue1("");
     dummy.current.scrollIntoView({ behavior: "smooth" });
   };
 
   return (
     <>
       <main>
-        {messages &&
-          messages.map((msg) => <ChatMessage key={msg.id} message={msg} />)}
+        {messagesArray &&
+          messagesArray.map((msg) => (
+            <ChatMessage key={msg.id} message={msg} />
+          ))}
 
         <span ref={dummy}></span>
       </main>
 
       <form onSubmit={sendMessage}>
         <input
-          value={formValue}
-          onChange={(e) => setFormValue(e.target.value)}
+          value={formValue1}
+          onChange={(e) => setFormValue1(e.target.value)}
           placeholder="say something nice"
         />
 
-        <button type="submit" disabled={!formValue}>
+        <button type="submit" disabled={!formValue1}>
           🕊️
         </button>
       </form>
