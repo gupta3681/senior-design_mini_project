@@ -33,7 +33,7 @@ function App() {
   return (
     <div className="App">
       <header>
-        <h1>Private Messaging</h1>
+        <h1>Direct Messaging</h1>
         <SignOut />
       </header>
 
@@ -41,7 +41,14 @@ function App() {
         {user ? (
           <>
             <UserSearch setSelectedUser={setSelectedUser} />
-            {selectedUser && <ChatRoom selectedUser={selectedUser} />}
+            {selectedUser ? (
+              <ChatRoom
+                selectedUser={selectedUser}
+                onBackToSearch={() => setSelectedUser(null)} // Pass the handler
+              />
+            ) : (
+              <UserSearch setSelectedUser={setSelectedUser} />
+            )}
           </>
         ) : (
           <SignIn />
@@ -62,7 +69,7 @@ function UserSearch({ setSelectedUser }) {
       <input
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
-        placeholder="Search users..."
+        placeholder="Search users"
       />
       <ul>
         {users &&
@@ -99,9 +106,6 @@ function SignIn() {
       <button className="sign-in" onClick={signInWithGoogle}>
         Sign in with Google
       </button>
-      <p>
-        Do not violate the community guidelines or you will be banned for life!
-      </p>
     </>
   );
 }
@@ -116,7 +120,7 @@ function SignOut() {
   );
 }
 
-function ChatRoom({ selectedUser }) {
+function ChatRoom({ selectedUser, onBackToSearch }) {
   const dummy = useRef();
   const { uid } = auth.currentUser;
 
@@ -135,7 +139,6 @@ function ChatRoom({ selectedUser }) {
   const messagesRef = firestore.collection("messages");
   const query = messagesRef.orderBy("createdAt").limit(25);
 
-  const [formValue, setFormValue] = useState("");
   const [formValue1, setFormValue1] = useState("");
 
   const messagesArray = Array.isArray(messages) ? messages : [];
@@ -147,7 +150,6 @@ function ChatRoom({ selectedUser }) {
 
     const newMessage = {
       text: formValue1,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       sender: uid,
       photoURL,
     };
@@ -159,9 +161,9 @@ function ChatRoom({ selectedUser }) {
         messages: [newMessage],
       });
     } else {
-      // If the conversation exists, append the new message
+      // If the conversation exists, update the messages array
       await conversationRef.update({
-        messages: firebase.firestore.FieldValue.arrayUnion(newMessage),
+        messages: [...messagesArray, newMessage], // Append the new message to the existing array
       });
     }
 
@@ -172,6 +174,7 @@ function ChatRoom({ selectedUser }) {
   return (
     <>
       <main>
+        {/* Display messages */}
         {messagesArray &&
           messagesArray.map((msg) => (
             <ChatMessage key={msg.id} message={msg} />
@@ -180,15 +183,17 @@ function ChatRoom({ selectedUser }) {
         <span ref={dummy}></span>
       </main>
 
+      {/* Add a button to go back to search users */}
+
       <form onSubmit={sendMessage}>
+        {/* Input for sending messages */}
         <input
           value={formValue1}
           onChange={(e) => setFormValue1(e.target.value)}
-          placeholder="say something nice"
         />
-
+        <button onClick={onBackToSearch}>Back</button>
         <button type="submit" disabled={!formValue1}>
-          🕊️
+          Send
         </button>
       </form>
     </>
@@ -196,19 +201,23 @@ function ChatRoom({ selectedUser }) {
 }
 
 function ChatMessage(props) {
-  const { text, uid, photoURL } = props.message;
+  const { text, sender, photoURL } = props.message;
+  const currentUser = auth.currentUser;
 
-  const messageClass = uid === auth.currentUser.uid ? "sent" : "received";
+  // Check if the user is authenticated and the message is sent by the current user
+  const isSender = currentUser && sender === currentUser.uid;
+
+  // Apply different CSS classes based on whether it's a sender or receiver message
+  const messageClass = isSender ? "sent" : "received";
 
   return (
     <>
       <div className={`message ${messageClass}`}>
-        <img
-          src={
-            photoURL || "https://api.adorable.io/avatars/23/abott@adorable.png"
-          }
-        />
-        <p>{text}</p>
+        {/* Apply different styling to the message container */}
+        <div class="sent">
+          <img src={photoURL} alt="User" />
+          <p>{text}</p>
+        </div>
       </div>
     </>
   );
