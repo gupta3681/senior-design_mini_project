@@ -75,9 +75,10 @@ Project Screen shots
 <img width="870" alt="Screenshot 2023-12-07 at 11 23 22 AM" src="https://github.com/gupta3681/senior-design_mini_project/assets/98760129/9b1b88d8-1ecc-4f7e-a8f7-2ad36922b7ef">
 
 
-<img width="323" alt="Screenshot 2023-06-16 at 11 40 30 AM" src="https://github.com/gupta3681/senior-design_mini_project/assets/98760129/e9aff8e6-642b-49ee-97c6-44dc3d4b9903">
-
 <img width="870" alt="Screenshot 2023-12-07 at 11 23 22 AM" src="https://github.com/gupta3681/senior-design_mini_project/assets/98760129/93bdfc48-3674-4bbd-ae36-33e89afcd40d">
+
+<img width="855" alt="Screenshot 2023-12-07 at 11 22 50 AM" src="https://github.com/gupta3681/senior-design_mini_project/assets/98760129/8d966ae2-2f5e-4c3f-8d73-6d304d982d73">
+
 
 
 
